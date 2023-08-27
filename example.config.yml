@@ -8,3 +8,7 @@ database:
   user: "postgres"
   password: "password"
   database-name: "postgres"
+
+jwt:
+  secret: "supersecretkey"
+  valid-mins: 10
