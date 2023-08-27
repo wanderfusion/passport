@@ -1,4 +1,4 @@
-package waitlist
+package auth
 
 import (
 	"github.com/akxcix/passport/pkg/config"
@@ -14,7 +14,7 @@ type Database struct {
 }
 
 func New(conf *config.DatabaseConfig) *Database {
-	log.Info().Msg("Connecting to database")
+	log.Info().Msg("Connecting to auth database")
 
 	dsn := repositories.FormatPostgresDSN(
 		conf.User,
@@ -24,7 +24,7 @@ func New(conf *config.DatabaseConfig) *Database {
 		conf.DatabaseName,
 	)
 	conn := sqlx.MustConnect("postgres", dsn)
-	log.Info().Msg("Connected to database")
+	log.Info().Msg("Connected to auth database")
 
 	return &Database{db: conn}
 }

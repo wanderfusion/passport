@@ -1,9 +1,9 @@
-create table
-  public.waitlist (
-    id uuid not null default gen_random_uuid (),
-    created_at timestamp with time zone not null default now(),
-    mail text not null default ''::text,
-    name text not null default ''::text,
-    constraint waitlist_pkey primary key (id),
-    constraint waitlist_mail_key unique (mail)
-  ) tablespace pg_default;
+CREATE TABLE users (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    username VARCHAR(50) UNIQUE,
+    email varchar(50) UNIQUE,
+    full_name varchar(50),
+    display_picture varchar(50)
+);

@@ -2,14 +2,14 @@ package app
 
 import (
 	"github.com/akxcix/passport/pkg/handlers"
-	waitlistHandlers "github.com/akxcix/passport/pkg/handlers/waitlist"
-	"github.com/akxcix/passport/pkg/services/waitlist"
+	authHandlers "github.com/akxcix/passport/pkg/handlers/auth"
+	"github.com/akxcix/passport/pkg/services/auth"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
 
-func createRoutes(waitlistService *waitlist.Service) *chi.Mux {
+func createRoutes(authService *auth.Service) *chi.Mux {
 	r := chi.NewRouter()
 
 	// global middlewares
@@ -28,8 +28,9 @@ func createRoutes(waitlistService *waitlist.Service) *chi.Mux {
 	// general routes
 	r.Get("/health", handlers.HealthCheck)
 
-	waitlistHandlers := waitlistHandlers.New(waitlistService)
-	r.Post("/waitlist", waitlistHandlers.PostWaitlist)
+	authHandlers := authHandlers.New(authService)
+	r.Post("/users", authHandlers.PostUser)
+	r.Post("/users/register/github", authHandlers.PostGithubRegisterUser)
 
 	return r
 }

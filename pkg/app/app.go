@@ -5,16 +5,16 @@ import (
 	"net/http"
 
 	"github.com/akxcix/passport/pkg/config"
-	"github.com/akxcix/passport/pkg/services/waitlist"
+	"github.com/akxcix/passport/pkg/services/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type application struct {
-	Config          *config.Config
-	WaitlistService *waitlist.Service
-	Routes          *chi.Mux
+	Config      *config.Config
+	AuthService *auth.Service
+	Routes      *chi.Mux
 }
 
 func readConfigs() *config.Config {
@@ -26,26 +26,26 @@ func readConfigs() *config.Config {
 	return config
 }
 
-func createServices(conf *config.Config) *waitlist.Service {
+func createServices(conf *config.Config) *auth.Service {
 	if conf == nil {
 		log.Fatal().Msg("Conf is nil")
 	}
 
-	waitlistService := waitlist.New(conf.Database)
+	authService := auth.New(conf.Database)
 
-	return waitlistService
+	return authService
 }
 
 func new() *application {
 	config := readConfigs()
 
-	waitlistService := createServices(config)
-	routes := createRoutes(waitlistService)
+	authService := createServices(config)
+	routes := createRoutes(authService)
 
 	app := application{
-		Config:          config,
-		WaitlistService: waitlistService,
-		Routes:          routes,
+		Config:      config,
+		AuthService: authService,
+		Routes:      routes,
 	}
 
 	return &app
