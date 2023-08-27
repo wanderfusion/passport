@@ -1,18 +1,19 @@
 package auth
 
 import (
+	"database/sql"
 	"errors"
 
 	"github.com/akxcix/passport/pkg/repositories"
 )
 
-func (db *Database) RegisterUser(username, mail string) error {
+func (db *Database) RegisterUser(username, hashedPassword string) error {
 	query := `
-		INSERT INTO public.users (username, email) VALUES ($1, $2)
+		INSERT INTO public.users (username, hashed_password) VALUES ($1, $2)
 	`
 
 	tx := db.db.MustBegin()
-	_, err := tx.Exec(query, username, mail)
+	_, err := tx.Exec(query, username, hashedPassword)
 	if err != nil {
 		isViolated, err := repositories.CheckPGUniqueConstraintError(err)
 		if isViolated {
@@ -23,16 +24,22 @@ func (db *Database) RegisterUser(username, mail string) error {
 	return tx.Commit()
 }
 
-// func (db *Database) UpdateToken(userId uuid.UUID, mail string) error {
-// 	query := `
-// 		INSERT INTO public.user_tokens (user_id, token) VALUES ($1, $2)
-// 	`
+func (db *Database) FetchHashByUsername(username string) (string, error) {
+	var passwordHash string
+	query := `
+		SELECT hashed_password FROM public.users WHERE username = $1
+	`
 
-// 	tx := db.db.MustBegin()
-// 	_, err := tx.Exec(query, mail)
-// 	if err != nil {
-// 		return err
-// 	}
+	// You can use QueryRow when expecting a single row
+	err := db.db.QueryRow(query, username).Scan(&passwordHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows returned means there's no user with that username
+			return "", errors.New("User not found")
+		}
+		// Some other error occurred
+		return "", err
+	}
 
-// 	return tx.Commit()
-// }
+	return passwordHash, nil
+}

@@ -35,6 +35,7 @@ func Read(path string) (*Config, error) {
 type Config struct {
 	Server   *ServerConfig   `yaml:"server"`
 	Database *DatabaseConfig `yaml:"database"`
+	Jwt      *Jwt            `yaml:"jwt"`
 }
 
 type ServerConfig struct {
@@ -48,4 +49,9 @@ type DatabaseConfig struct {
 	User         string `yaml:"user"`
 	Password     string `yaml:"password"`
 	DatabaseName string `yaml:"database-name"`
+}
+
+type Jwt struct {
+	Secret    string `yaml:"secret"`
+	ValidMins int    `yaml:"valid-mins"`
 }

@@ -6,12 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type BaseTable struct {
+	ID        uuid.UUID `db:"id"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+}
+
 type User struct {
-	ID             uuid.UUID `db:"id"`
-	CreatedAt      time.Time `db:"created_at"`
-	UpdatedAt      time.Time `db:"updated_at"`
-	Username       string    `db:"username"`
-	Email          string    `db:"email"`
-	FullName       string    `db:"full_name"`
-	DisplayPicture string    `db:"display_picture"`
+	BaseTable
+	Username       string `db:"username"`
+	HashedPassword string `db:"hashed_password"`
 }

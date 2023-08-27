@@ -14,14 +14,12 @@ func createRoutes(authService *auth.Service) *chi.Mux {
 
 	// global middlewares
 	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"https://*", "http://*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
+		MaxAge:           300,
 	}))
 	r.Use(handlers.LogRequest)
 
@@ -29,8 +27,9 @@ func createRoutes(authService *auth.Service) *chi.Mux {
 	r.Get("/health", handlers.HealthCheck)
 
 	authHandlers := authHandlers.New(authService)
-	r.Post("/users", authHandlers.PostUser)
-	r.Post("/users/register/github", authHandlers.PostGithubRegisterUser)
+	r.Post("/users/register", authHandlers.RegisterUser)
+	r.Post("/users/login", authHandlers.LoginUser)
+	r.Post("/users/verify", authHandlers.ValidateJwt)
 
 	return r
 }

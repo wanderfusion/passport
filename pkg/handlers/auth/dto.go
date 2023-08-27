@@ -1,10 +1,10 @@
 package auth
 
-type CreateUserReq struct {
+type UserAuthReq struct {
 	Username string `json:"username"`
-	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-type CreateGithubUserReq struct {
-	Code string `json:"code"`
+type JwtVerifyRequest struct {
+	Jwt string `json:"jwt"`
 }

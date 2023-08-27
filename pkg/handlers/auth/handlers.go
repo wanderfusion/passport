@@ -19,36 +19,50 @@ func New(s *auth.Service) *Handlers {
 	return &h
 }
 
-func (h *Handlers) PostUser(w http.ResponseWriter, r *http.Request) {
-	var req CreateUserReq
-	unmarshaller := handlers.Unmarshalable[CreateUserReq]{}
-	if err := unmarshaller.FromRequest(r, &req); err != nil {
+func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
+	var req UserAuthReq
+	if err := handlers.FromRequest(r, &req); err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	err := h.Service.RegisterUser(req.Username, req.Email)
-	if err != nil {
-		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-
-	handlers.RespondWithData(w, r, "successfully added to waitlist")
-}
-
-func (h *Handlers) PostGithubRegisterUser(w http.ResponseWriter, r *http.Request) {
-	var req CreateGithubUserReq
-	unmarshaller := handlers.Unmarshalable[CreateGithubUserReq]{}
-	if err := unmarshaller.FromRequest(r, &req); err != nil {
-		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
-		return
-	}
-
-	msg, err := h.Service.RegisterGithubUser(req.Code)
+	msg, err := h.Service.RegisterUser(req.Username, req.Password)
 	if err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
 	handlers.RespondWithData(w, r, msg)
+}
+
+func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
+	var req UserAuthReq
+	if err := handlers.FromRequest(r, &req); err != nil {
+		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	msg, err := h.Service.LoginUser(req.Username, req.Password)
+	if err != nil {
+		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	handlers.RespondWithData(w, r, msg)
+}
+
+func (h *Handlers) ValidateJwt(w http.ResponseWriter, r *http.Request) {
+	var req JwtVerifyRequest
+	if err := handlers.FromRequest(r, &req); err != nil {
+		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	isValid := h.Service.ValidateJwt(req.Jwt)
+	if !isValid {
+		handlers.RespondWithError(w, r, ErrInvalidJwt, http.StatusUnauthorized)
+		return
+	}
+
+	handlers.RespondWithData(w, r, true)
 }

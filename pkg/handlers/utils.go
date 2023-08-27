@@ -58,10 +58,7 @@ func RespondWithError(w http.ResponseWriter, r *http.Request, e error, status in
 	w.Write(json)
 }
 
-// reading
-type Unmarshalable[T any] struct{}
-
-func (u Unmarshalable[T]) FromRequest(req *http.Request, v *T) error {
+func FromRequest[T any](req *http.Request, v *T) error {
 	decoder := json.NewDecoder(req.Body)
 	return decoder.Decode(v)
 }

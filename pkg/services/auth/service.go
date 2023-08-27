@@ -2,37 +2,73 @@ package auth
 
 import (
 	"github.com/rs/zerolog/log"
+	"golang.org/x/crypto/bcrypt"
 
-	"github.com/akxcix/passport/pkg/clients/oauth/github"
 	"github.com/akxcix/passport/pkg/config"
+	"github.com/akxcix/passport/pkg/jwt"
 	"github.com/akxcix/passport/pkg/repositories/auth"
 )
 
 type Service struct {
-	AuthRepo          *auth.Database
-	GithubOauthClient *github.GithubOauthClient
+	JwtManager *jwt.JwtManager
+	AuthRepo   *auth.Database
 }
 
-func New(conf *config.DatabaseConfig) *Service {
-	if conf == nil {
-		log.Fatal().Msg("Conf is nil")
+func New(dbConf *config.DatabaseConfig, jwtConf *config.Jwt) *Service {
+	if dbConf == nil {
+		log.Fatal().Msg("dbConf is nil")
 	}
 
-	authRepo := auth.New(conf)
-	githubOauthClient := github.New("https://github.com", "6f9e7c286c45c0aa4169", "774e7cc8ecff7d2a4d2e0c341b3e379aa1bcc468")
+	if jwtConf == nil {
+		log.Fatal().Msg("jwtConf is nil")
+	}
+
+	authRepo := auth.New(dbConf)
+	jwtManager := jwt.New(jwtConf.Secret, jwtConf.ValidMins)
 
 	svc := &Service{
-		AuthRepo:          authRepo,
-		GithubOauthClient: githubOauthClient,
+		JwtManager: jwtManager,
+		AuthRepo:   authRepo,
 	}
 
 	return svc
 }
 
-func (s *Service) RegisterUser(username, mail string) error {
-	return s.AuthRepo.RegisterUser(username, mail)
+func (s *Service) RegisterUser(username, password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
+	if err != nil {
+		return "", err
+	}
+
+	err = s.AuthRepo.RegisterUser(username, string(hashedPassword))
+	if err != nil {
+		return "", err
+	}
+
+	msg := "Sign up successful"
+	return msg, nil
 }
 
-func (s *Service) RegisterGithubUser(code string) (string, error) {
-	return s.GithubOauthClient.GetToken(code)
+func (s *Service) LoginUser(username, password string) (string, error) {
+	hashedPassword, err := s.AuthRepo.FetchHashByUsername(username)
+	if err != nil {
+		return "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		return "", err
+	}
+
+	jwtString, err := s.JwtManager.GenerateJWT(username)
+	return jwtString, err
+}
+
+func (s *Service) ValidateJwt(token string) bool {
+	err := s.JwtManager.Verify(token)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

@@ -31,7 +31,7 @@ func createServices(conf *config.Config) *auth.Service {
 		log.Fatal().Msg("Conf is nil")
 	}
 
-	authService := auth.New(conf.Database)
+	authService := auth.New(conf.Database, conf.Jwt)
 
 	return authService
 }
