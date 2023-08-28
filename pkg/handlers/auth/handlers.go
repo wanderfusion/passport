@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/akxcix/passport/pkg/handlers"
@@ -26,6 +27,16 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Email == "" {
+		handlers.RespondWithError(w, r, errors.New("email is empty"), http.StatusBadRequest)
+		return
+	}
+
+	if req.Password == "" {
+		handlers.RespondWithError(w, r, errors.New("password is empty"), http.StatusBadRequest)
+		return
+	}
+
 	msg, err := h.Service.RegisterUser(req.Email, req.Password)
 	if err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
@@ -39,6 +50,16 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	var req UserAuthReq
 	if err := handlers.FromRequest(r, &req); err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	if req.Email == "" {
+		handlers.RespondWithError(w, r, errors.New("email is empty"), http.StatusBadRequest)
+		return
+	}
+
+	if req.Password == "" {
+		handlers.RespondWithError(w, r, errors.New("password is empty"), http.StatusBadRequest)
 		return
 	}
 
