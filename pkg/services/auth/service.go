@@ -49,8 +49,8 @@ func (s *Service) RegisterUser(username, password string) (string, error) {
 	return msg, nil
 }
 
-func (s *Service) LoginUser(username, password string) (string, error) {
-	hashedPassword, err := s.AuthRepo.FetchHashByUsername(username)
+func (s *Service) LoginUser(email, password string) (string, error) {
+	id, hashedPassword, err := s.AuthRepo.FetchUserDataByEmail(email)
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +60,7 @@ func (s *Service) LoginUser(username, password string) (string, error) {
 		return "", err
 	}
 
-	jwtString, err := s.JwtManager.GenerateJWT(username)
+	jwtString, err := s.JwtManager.GenerateJWT(id, email)
 	return jwtString, err
 }
 

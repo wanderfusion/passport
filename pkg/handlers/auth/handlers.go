@@ -26,7 +26,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := h.Service.RegisterUser(req.Username, req.Password)
+	msg, err := h.Service.RegisterUser(req.Email, req.Password)
 	if err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
 		return
@@ -42,7 +42,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := h.Service.LoginUser(req.Username, req.Password)
+	msg, err := h.Service.LoginUser(req.Email, req.Password)
 	if err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
 		return

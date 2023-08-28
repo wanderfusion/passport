@@ -5,15 +5,16 @@ import (
 	"errors"
 
 	"github.com/akxcix/passport/pkg/repositories"
+	"github.com/google/uuid"
 )
 
-func (db *Database) RegisterUser(username, hashedPassword string) error {
+func (db *Database) RegisterUser(email, hashedPassword string) error {
 	query := `
-		INSERT INTO public.users (username, hashed_password) VALUES ($1, $2)
+		INSERT INTO public.users (email, hashed_password) VALUES ($1, $2)
 	`
 
 	tx := db.db.MustBegin()
-	_, err := tx.Exec(query, username, hashedPassword)
+	_, err := tx.Exec(query, email, hashedPassword)
 	if err != nil {
 		isViolated, err := repositories.CheckPGUniqueConstraintError(err)
 		if isViolated {
@@ -24,22 +25,23 @@ func (db *Database) RegisterUser(username, hashedPassword string) error {
 	return tx.Commit()
 }
 
-func (db *Database) FetchHashByUsername(username string) (string, error) {
+func (db *Database) FetchUserDataByEmail(email string) (uuid.UUID, string, error) {
 	var passwordHash string
+	var id uuid.UUID
 	query := `
-		SELECT hashed_password FROM public.users WHERE username = $1
+		SELECT id, hashed_password FROM public.users WHERE email = $1
 	`
 
-	// You can use QueryRow when expecting a single row
-	err := db.db.QueryRow(query, username).Scan(&passwordHash)
+	// QueryRow still works, but now we're scanning into multiple variables
+	err := db.db.QueryRow(query, email).Scan(&id, &passwordHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// No rows returned means there's no user with that username
-			return "", errors.New("User not found")
+			// No rows returned means there's no user with that email
+			return uuid.UUID{}, "", errors.New("User not found")
 		}
-		// Some other error occurred
-		return "", err
+		// Some other cosmic-level error happened, man
+		return uuid.UUID{}, "", err
 	}
 
-	return passwordHash, nil
+	return id, passwordHash, nil
 }

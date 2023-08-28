@@ -14,6 +14,6 @@ type BaseTable struct {
 
 type User struct {
 	BaseTable
-	Username       string `db:"username"`
+	Email          string `db:"email"`
 	HashedPassword string `db:"hashed_password"`
 }

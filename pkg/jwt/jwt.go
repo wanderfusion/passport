@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
 	"github.com/golang-jwt/jwt"
@@ -21,7 +22,8 @@ type JwtManager struct {
 }
 
 type Claims struct {
-	Username  string    `json:"username"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
@@ -46,10 +48,11 @@ func New(secret string, validMins int) *JwtManager {
 	return &jwtManager
 }
 
-func (j *JwtManager) GenerateJWT(username string) (string, error) {
+func (j *JwtManager) GenerateJWT(uuid uuid.UUID, email string) (string, error) {
 	expirationTime := time.Now().Add(j.validity)
 	claims := &Claims{
-		Username:  username,
+		ID:        uuid,
+		Email:     email,
 		ExpiresAt: expirationTime,
 	}
 
