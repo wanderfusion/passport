@@ -5,6 +5,11 @@ type UserAuthReq struct {
 	Password string `json:"password"`
 }
 
+type UpdateUserReq struct {
+	Username   string `json:"username"`
+	ProfilePic string `json:"profilePic"`
+}
+
 type JwtVerifyRequest struct {
 	Jwt string `json:"jwt"`
 }

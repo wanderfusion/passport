@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 
@@ -50,25 +51,54 @@ func (s *Service) RegisterUser(username, password string) (string, error) {
 }
 
 func (s *Service) LoginUser(email, password string) (string, error) {
-	id, hashedPassword, err := s.AuthRepo.FetchUserDataByEmail(email)
+	user, err := s.AuthRepo.FetchUserDataByEmail(email)
 	if err != nil {
 		return "", err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
 		return "", err
 	}
 
-	jwtString, err := s.JwtManager.GenerateJWT(id, email)
+	username := ""
+	profilePic := ""
+
+	if user.Username != nil {
+		username = *user.Username
+	}
+
+	if user.ProfilePic != nil {
+		profilePic = *user.ProfilePic
+	}
+
+	jwtString, err := s.JwtManager.GenerateJWT(user.ID, email, username, profilePic)
 	return jwtString, err
 }
 
-func (s *Service) ValidateJwt(token string) bool {
-	err := s.JwtManager.Verify(token)
-	if err != nil {
-		return false
+func (s *Service) UpdateUser(id uuid.UUID, username, profilePic string) error {
+	user := auth.User{}
+	user.ID = id
+
+	user.Username = &username
+	if username == "" {
+		user.Username = nil
 	}
 
-	return true
+	user.ProfilePic = &profilePic
+	if profilePic == "" {
+		user.ProfilePic = nil
+	}
+
+	err := s.AuthRepo.UpdateUserProfile(user)
+	return err
+}
+
+func (s *Service) ValidateJwt(token string) (*jwt.Claims, bool) {
+	claims, err := s.JwtManager.Verify(token)
+	if err != nil {
+		return nil, false
+	}
+
+	return claims, true
 }

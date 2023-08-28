@@ -30,6 +30,7 @@ func createRoutes(authService *auth.Service) *chi.Mux {
 	r.Post("/users/register", authHandlers.RegisterUser)
 	r.Post("/users/login", authHandlers.LoginUser)
 	r.Post("/users/verify", authHandlers.ValidateJwt)
+	r.Post("/users/update", authHandlers.AuthMiddleware(authHandlers.UpdateUser))
 
 	return r
 }

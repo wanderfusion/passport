@@ -22,9 +22,11 @@ type JwtManager struct {
 }
 
 type Claims struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	ExpiresAt  time.Time `json:"expiresAt"`
+	ID         uuid.UUID `json:"id"`
+	Email      string    `json:"email"`
+	Username   string    `json:"username"`
+	ProfilePic string    `json:"profilePicture"`
 }
 
 func (c Claims) Valid() error {
@@ -48,12 +50,14 @@ func New(secret string, validMins int) *JwtManager {
 	return &jwtManager
 }
 
-func (j *JwtManager) GenerateJWT(uuid uuid.UUID, email string) (string, error) {
+func (j *JwtManager) GenerateJWT(uuid uuid.UUID, email, username, profilePic string) (string, error) {
 	expirationTime := time.Now().Add(j.validity)
 	claims := &Claims{
-		ID:        uuid,
-		Email:     email,
-		ExpiresAt: expirationTime,
+		ExpiresAt:  expirationTime,
+		ID:         uuid,
+		Email:      email,
+		Username:   username,
+		ProfilePic: profilePic,
 	}
 
 	token := jwt.NewWithClaims(j.method, claims)
@@ -66,7 +70,7 @@ func (j *JwtManager) GenerateJWT(uuid uuid.UUID, email string) (string, error) {
 	return tokenString, nil
 }
 
-func (j *JwtManager) Verify(token string) error {
+func (j *JwtManager) Verify(token string) (*Claims, error) {
 	var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
 		return j.secret, nil
 	}
@@ -76,13 +80,13 @@ func (j *JwtManager) Verify(token string) error {
 	parsedToken, err := jwt.ParseWithClaims(token, claims, keyfunc)
 	if err != nil {
 		log.Error().Err(err).Msg("error parsing jwt token")
-		return err
+		return nil, err
 	}
 
 	if !parsedToken.Valid {
 		log.Error().Msg("token is invalid")
-		return errorJwtInvalid
+		return nil, errorJwtInvalid
 	}
 
-	return nil
+	return claims, nil
 }

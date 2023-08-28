@@ -3,5 +3,6 @@ package handlers
 type ContextKey string
 
 const (
-	RequestIdContextKey ContextKey = "userId"
+	RequestIdContextKey ContextKey = "requestId"
+	UserIdContextKey    ContextKey = "userId"
 )
