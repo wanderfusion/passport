@@ -51,7 +51,7 @@ type RateLimiter struct {
 }
 
 func NewRateLimiter() *RateLimiter {
-	rate, err := limiter.NewRateFromFormatted("500-M")
+	rate, err := limiter.NewRateFromFormatted("2000-M")
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to initialise limiter")
 	}
