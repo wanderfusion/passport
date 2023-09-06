@@ -52,6 +52,7 @@ type DatabaseConfig struct {
 }
 
 type Jwt struct {
-	Secret    string `yaml:"secret"`
-	ValidMins int    `yaml:"valid-mins"`
+	Secret                   string `yaml:"secret"`
+	TokenValidMicroSeconds   int64  `yaml:"token-valid-microseconds"`
+	RefreshValidMicroSeconds int64  `yaml:"refresh-valid-microseconds"`
 }

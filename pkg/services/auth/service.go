@@ -25,7 +25,11 @@ func New(dbConf *config.DatabaseConfig, jwtConf *config.Jwt) *Service {
 	}
 
 	authRepo := auth.New(dbConf)
-	jwtManager := jwt.New(jwtConf.Secret, jwtConf.ValidMins)
+	jwtManager := jwt.New(
+		jwtConf.Secret,
+		jwtConf.TokenValidMicroSeconds,
+		jwtConf.RefreshValidMicroSeconds,
+	)
 
 	svc := &Service{
 		JwtManager: jwtManager,
@@ -50,15 +54,15 @@ func (s *Service) RegisterUser(username, password string) (string, error) {
 	return msg, nil
 }
 
-func (s *Service) LoginUser(email, password string) (string, error) {
+func (s *Service) LoginUser(email, password string) (jwt.TokenPair, error) {
 	user, err := s.AuthRepo.FetchUserDataByEmail(email)
 	if err != nil {
-		return "", err
+		return jwt.TokenPair{}, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
-		return "", err
+		return jwt.TokenPair{}, err
 	}
 
 	username := ""
@@ -72,8 +76,8 @@ func (s *Service) LoginUser(email, password string) (string, error) {
 		profilePic = *user.ProfilePic
 	}
 
-	jwtString, err := s.JwtManager.GenerateJWT(user.ID, email, username, profilePic)
-	return jwtString, err
+	pair, err := s.JwtManager.GenerateTokenPair(user.ID, email, username, profilePic)
+	return pair, err
 }
 
 func (s *Service) UpdateUser(id uuid.UUID, username, profilePic string) error {
@@ -94,8 +98,12 @@ func (s *Service) UpdateUser(id uuid.UUID, username, profilePic string) error {
 	return err
 }
 
-func (s *Service) ValidateJwt(token string) (*jwt.Claims, bool) {
-	claims, err := s.JwtManager.Verify(token)
+func (s *Service) ValidateRefreshToken(token string) (string, bool) {
+	return s.JwtManager.GenerateUsingRefreshToken(token)
+}
+
+func (s *Service) ValidateAuthToken(token string) (*jwt.Claims, bool) {
+	claims, err := s.JwtManager.Verify(token, jwt.AuthToken)
 	if err != nil {
 		return nil, false
 	}

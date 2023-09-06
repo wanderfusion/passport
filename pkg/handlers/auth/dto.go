@@ -1,5 +1,6 @@
 package auth
 
+// req --------------------------------------------------------------------------------------------
 type UserAuthReq struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -12,4 +13,15 @@ type UpdateUserReq struct {
 
 type JwtVerifyRequest struct {
 	Jwt string `json:"jwt"`
+}
+
+// res --------------------------------------------------------------------------------------------
+type UserAuthRes struct {
+	TokenPair TokenPairDTO `json:"tokenPair"`
+}
+
+// dto --------------------------------------------------------------------------------------------
+type TokenPairDTO struct {
+	RefreshToken string `json:"refreshToken"`
+	AuthToken    string `json:"authToken"`
 }

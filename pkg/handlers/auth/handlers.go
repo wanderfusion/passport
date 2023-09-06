@@ -66,29 +66,34 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := h.Service.LoginUser(req.Email, req.Password)
+	tokenPair, err := h.Service.LoginUser(req.Email, req.Password)
 	if err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 
-	handlers.RespondWithData(w, r, msg)
+	tokenPairDTO := TokenPairDTO{
+		RefreshToken: tokenPair.RefreshToken,
+		AuthToken:    tokenPair.AuthToken,
+	}
+
+	handlers.RespondWithData(w, r, tokenPairDTO)
 }
 
-func (h *Handlers) ValidateJwt(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GenerateAuthToken(w http.ResponseWriter, r *http.Request) {
 	var req JwtVerifyRequest
 	if err := handlers.FromRequest(r, &req); err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	_, isValid := h.Service.ValidateJwt(req.Jwt)
+	authToken, isValid := h.Service.ValidateRefreshToken(req.Jwt)
 	if !isValid {
 		handlers.RespondWithError(w, r, ErrInvalidJwt, http.StatusUnauthorized)
 		return
 	}
 
-	handlers.RespondWithData(w, r, true)
+	handlers.RespondWithData(w, r, authToken)
 }
 
 func (h *Handlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +136,7 @@ func (h *Handlers) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		tokenString := tokenParts[1]
 
 		// Validate token
-		claims, isValid := h.Service.ValidateJwt(tokenString)
+		claims, isValid := h.Service.ValidateAuthToken(tokenString)
 		if claims == nil || !isValid {
 			handlers.RespondWithError(w, r, ErrInvalidJwt, http.StatusUnauthorized)
 			return
