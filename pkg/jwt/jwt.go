@@ -10,24 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-var (
-	errorJwtExpired           error = errors.New("the jwt is expired")
-	errorJwtInvalid           error = errors.New("the jwt provided is invalid")
-	errorJwtTokenTypeMismatch error = errors.New("the jwt provided of incorrect type")
-)
-
-type TokenType string
-
-type TokenPair struct {
-	RefreshToken string
-	AuthToken    string
-}
-
-const (
-	RefreshToken TokenType = "refresh"
-	AuthToken    TokenType = "auth"
-)
-
+// JwtManager manages the creation and verification of JWTs.
 type JwtManager struct {
 	secret      []byte
 	method      jwt.SigningMethod
@@ -35,6 +18,7 @@ type JwtManager struct {
 	refreshLife time.Duration
 }
 
+// Claims represents the payload of JWT.
 type Claims struct {
 	ExpiresAt  time.Time `json:"expiresAt"`
 	ID         uuid.UUID `json:"id"`
@@ -44,6 +28,29 @@ type Claims struct {
 	TokenType  TokenType `json:"tokenType"`
 }
 
+// TokenType is used to distinguish between different types of tokens.
+type TokenType string
+
+// TokenPair holds both the refresh and auth tokens.
+type TokenPair struct {
+	RefreshToken string
+	AuthToken    string
+}
+
+// Constants for types of tokens.
+const (
+	RefreshToken TokenType = "refresh"
+	AuthToken    TokenType = "auth"
+)
+
+// Declare custom errors for JWT verification.
+var (
+	errorJwtExpired           error = errors.New("the jwt is expired")
+	errorJwtInvalid           error = errors.New("the jwt provided is invalid")
+	errorJwtTokenTypeMismatch error = errors.New("the jwt provided of incorrect type")
+)
+
+// Valid checks if the token has expired.
 func (c Claims) Valid() error {
 	if c.ExpiresAt.After(time.Now()) {
 		return nil
@@ -52,6 +59,7 @@ func (c Claims) Valid() error {
 	return errorJwtExpired
 }
 
+// New creates a new JwtManager.
 func New(secret string, tokenLifeMicroSeconds, refreshLifeMicroSeconds int64) *JwtManager {
 	signingMethod := jwt.SigningMethodHS256
 	tokenLife := time.Duration(tokenLifeMicroSeconds) * time.Microsecond
@@ -67,43 +75,17 @@ func New(secret string, tokenLifeMicroSeconds, refreshLifeMicroSeconds int64) *J
 	return &jwtManager
 }
 
-func (j *JwtManager) GenerateTokenPair(uuid uuid.UUID, email, username, profilePic string) (TokenPair, error) {
-	authToken, err := j.generateToken(uuid, email, username, profilePic, AuthToken)
-	if err != nil {
-		log.Error().Err(err).Msg("error signing token")
-		return TokenPair{}, err
+// GenerateToken creates a new JWT with the given claims.
+func (j *JwtManager) GenerateToken(uuid uuid.UUID, email string, username, profilePic *string, tokenType TokenType) (string, error) {
+	if username == nil {
+		*username = ""
 	}
 
-	refreshToken, err := j.generateToken(uuid, email, username, profilePic, RefreshToken)
-	if err != nil {
-		log.Error().Err(err).Msg("error signing token")
-		return TokenPair{}, err
+	if profilePic == nil {
+		*profilePic = ""
 	}
 
-	pair := TokenPair{
-		AuthToken:    authToken,
-		RefreshToken: refreshToken,
-	}
-
-	return pair, nil
-}
-
-func (j *JwtManager) GenerateUsingRefreshToken(refreshToken string) (string, bool) {
-	claims, err := j.Verify(refreshToken, RefreshToken)
-	if err != nil {
-		return "", false
-	}
-
-	authToken, err := j.generateToken(claims.ID, claims.Email, claims.Username, claims.ProfilePic, AuthToken)
-	if err != nil {
-		log.Error().Err(err).Msg("error signing token")
-		return "", false
-	}
-
-	return authToken, true
-}
-
-func (j *JwtManager) generateToken(uuid uuid.UUID, email, username, profilePic string, tokenType TokenType) (string, error) {
+	// Choose token life based on the token type.
 	life := j.tokenLife
 	if tokenType == RefreshToken {
 		life = j.refreshLife
@@ -113,8 +95,8 @@ func (j *JwtManager) generateToken(uuid uuid.UUID, email, username, profilePic s
 		ExpiresAt:  expirationTime,
 		ID:         uuid,
 		Email:      email,
-		Username:   username,
-		ProfilePic: profilePic,
+		Username:   *username,
+		ProfilePic: *profilePic,
 		TokenType:  tokenType,
 	}
 
@@ -128,6 +110,7 @@ func (j *JwtManager) generateToken(uuid uuid.UUID, email, username, profilePic s
 	return tokenString, nil
 }
 
+// Verify validates a given JWT.
 func (j *JwtManager) Verify(token string, tokenType TokenType) (*Claims, error) {
 	var keyfunc jwt.Keyfunc = func(token *jwt.Token) (interface{}, error) {
 		return j.secret, nil

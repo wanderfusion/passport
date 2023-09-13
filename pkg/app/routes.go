@@ -15,62 +15,63 @@ import (
 	"github.com/go-chi/cors"
 )
 
+// -----------------------------------------------------------------------------------
 func createRoutes(authService *auth.Service) *chi.Mux {
-	rateLimiter := NewRateLimiter()
-	limiterMiddleware := rateLimiter.rateLimitMiddleware()
+	authH := authHandlers.New(authService)
+
 	r := chi.NewRouter()
-
-	// global middlewares
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
-		MaxAge:           300,
-	}))
-	r.Use(limiterMiddleware)
-	r.Use(handlers.LogRequest)
-
-	// general routes
+	applyGlobalMiddlewares(r)
 	r.Get("/health", handlers.HealthCheck)
-
-	authHandlers := authHandlers.New(authService)
-	r.Post("/users/register", authHandlers.RegisterUser)
-	r.Post("/users/login", authHandlers.LoginUser)
-	r.Post("/users/token/refresh", authHandlers.GenerateAuthToken)
-	r.Post("/users/update", authHandlers.AuthMiddleware(authHandlers.UpdateUser))
+	applyAuthRoutes(r, authH)
 
 	return r
 }
 
-// rate limiter -----------------------------------------------------------------------------------
-type RateLimiter struct {
-	store limiter.Store
-	rate  limiter.Rate
+func applyGlobalMiddlewares(r *chi.Mux) {
+	r.Use(corsHandler())
+	r.Use(rateLimiteMiddleware())
+	r.Use(handlers.LogRequest)
 }
 
-func NewRateLimiter() *RateLimiter {
+func corsHandler() func(http.Handler) http.Handler {
+	return cors.Handler(
+		cors.Options{
+			AllowedOrigins:   []string{"https://*", "http://*"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+			ExposedHeaders:   []string{"Link"},
+			AllowCredentials: false,
+			MaxAge:           300,
+		},
+	)
+}
+
+func rateLimiteMiddleware() func(http.Handler) http.Handler {
 	rate, err := limiter.NewRateFromFormatted("2000-M")
 	if err != nil {
-		log.Fatal().Err(err).Msg("unable to initialise limiter")
+		log.Fatal().Err(err).Msg("Failed to initialize limiter")
 	}
 
 	store := memory.NewStore()
 
-	limiter := RateLimiter{
-		store: store,
-		rate:  rate,
-	}
-	return &limiter
-}
-
-func (l *RateLimiter) rateLimitMiddleware() func(h http.Handler) http.Handler {
 	middleware := mhttp.NewMiddleware(limiter.New(
-		l.store,
-		l.rate,
+		store,
+		rate,
 		limiter.WithTrustForwardHeader(true),
 	))
 
 	return middleware.Handler
+}
+
+func applyAuthRoutes(r *chi.Mux, authH *authHandlers.Handlers) {
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/register", authH.RegisterUser)
+		r.Post("/login", authH.LoginUser)
+		r.With(authH.AuthMiddleware).Put("/me", authH.UpdateUser)
+	})
+
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/tokens/renew-auth", authH.RenewAuthToken)
+		r.Post("/tokens/renew-refresh", authH.RenewRefreshToken)
+	})
 }

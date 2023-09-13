@@ -5,6 +5,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/akxcix/passport/pkg/commons/stringutils"
 	"github.com/akxcix/passport/pkg/config"
 	"github.com/akxcix/passport/pkg/jwt"
 	"github.com/akxcix/passport/pkg/repositories/auth"
@@ -16,13 +17,7 @@ type Service struct {
 }
 
 func New(dbConf *config.DatabaseConfig, jwtConf *config.Jwt) *Service {
-	if dbConf == nil {
-		log.Fatal().Msg("dbConf is nil")
-	}
-
-	if jwtConf == nil {
-		log.Fatal().Msg("jwtConf is nil")
-	}
+	validateConfig(dbConf, jwtConf)
 
 	authRepo := auth.New(dbConf)
 	jwtManager := jwt.New(
@@ -31,21 +26,28 @@ func New(dbConf *config.DatabaseConfig, jwtConf *config.Jwt) *Service {
 		jwtConf.RefreshValidMicroSeconds,
 	)
 
-	svc := &Service{
+	return &Service{
 		JwtManager: jwtManager,
 		AuthRepo:   authRepo,
 	}
-
-	return svc
 }
 
-func (s *Service) RegisterUser(username, password string) (string, error) {
+func validateConfig(dbConf *config.DatabaseConfig, jwtConf *config.Jwt) {
+	if dbConf == nil || jwtConf == nil {
+		log.Fatal().Msg("Invalid config")
+	}
+}
+
+func (s *Service) RegisterUser(email, password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {
 		return "", err
 	}
 
-	err = s.AuthRepo.RegisterUser(username, string(hashedPassword))
+	username := stringutils.GenerateUsername(email)
+	defaultProfilePic := "https://avatar.vercel.sh/monsters.png"
+
+	err = s.AuthRepo.RegisterUser(email, string(hashedPassword), username, defaultProfilePic)
 	if err != nil {
 		return "", err
 	}
@@ -65,19 +67,21 @@ func (s *Service) LoginUser(email, password string) (jwt.TokenPair, error) {
 		return jwt.TokenPair{}, err
 	}
 
-	username := ""
-	profilePic := ""
-
-	if user.Username != nil {
-		username = *user.Username
+	authToken, err := s.JwtManager.GenerateToken(user.ID, user.Email, user.Username, user.ProfilePic, jwt.AuthToken)
+	if err != nil {
+		return jwt.TokenPair{}, err
+	}
+	refreshToken, err := s.JwtManager.GenerateToken(user.ID, user.Email, user.Username, user.ProfilePic, jwt.RefreshToken)
+	if err != nil {
+		return jwt.TokenPair{}, err
 	}
 
-	if user.ProfilePic != nil {
-		profilePic = *user.ProfilePic
+	tokenPair := jwt.TokenPair{
+		AuthToken:    authToken,
+		RefreshToken: refreshToken,
 	}
 
-	pair, err := s.JwtManager.GenerateTokenPair(user.ID, email, username, profilePic)
-	return pair, err
+	return tokenPair, err
 }
 
 func (s *Service) UpdateUser(id uuid.UUID, username, profilePic string) error {
@@ -98,8 +102,38 @@ func (s *Service) UpdateUser(id uuid.UUID, username, profilePic string) error {
 	return err
 }
 
-func (s *Service) ValidateRefreshToken(token string) (string, bool) {
-	return s.JwtManager.GenerateUsingRefreshToken(token)
+func (s *Service) RenewAuthToken(token string) (string, bool) {
+	claims, err := s.JwtManager.Verify(token, jwt.RefreshToken)
+	if err != nil {
+		return "", false
+	}
+
+	authToken, err := s.JwtManager.GenerateToken(claims.ID, claims.Email, &claims.Username, &claims.ProfilePic, jwt.AuthToken)
+	if err != nil {
+		return "", false
+	}
+
+	return authToken, true
+}
+
+func (s *Service) RenewRefreshToken(token string) (string, bool) {
+	claims, err := s.JwtManager.Verify(token, jwt.RefreshToken)
+	if err != nil {
+		return "", false
+	}
+
+	userId := claims.ID
+	user, err := s.AuthRepo.FetchUserDataByID(userId)
+	if err != nil {
+		return "", false
+	}
+
+	refreshToken, err := s.JwtManager.GenerateToken(user.ID, user.Email, user.Username, user.ProfilePic, jwt.RefreshToken)
+	if err != nil {
+		return "", false
+	}
+
+	return refreshToken, true
 }
 
 func (s *Service) ValidateAuthToken(token string) (*jwt.Claims, bool) {

@@ -80,20 +80,58 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	handlers.RespondWithData(w, r, tokenPairDTO)
 }
 
-func (h *Handlers) GenerateAuthToken(w http.ResponseWriter, r *http.Request) {
+// func (h *Handlers) GenerateAuthToken(w http.ResponseWriter, r *http.Request) {
+// 	var req JwtVerifyRequest
+// 	if err := handlers.FromRequest(r, &req); err != nil {
+// 		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	authToken, isValid := h.Service.G(req.Jwt)
+// 	if !isValid {
+// 		handlers.RespondWithError(w, r, ErrInvalidJwt, http.StatusUnauthorized)
+// 		return
+// 	}
+
+// 	handlers.RespondWithData(w, r, authToken)
+// }
+
+func (h *Handlers) RenewAuthToken(w http.ResponseWriter, r *http.Request) {
 	var req JwtVerifyRequest
 	if err := handlers.FromRequest(r, &req); err != nil {
 		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
-	authToken, isValid := h.Service.ValidateRefreshToken(req.Jwt)
+	authToken, isValid := h.Service.RenewAuthToken(req.Jwt)
 	if !isValid {
 		handlers.RespondWithError(w, r, ErrInvalidJwt, http.StatusUnauthorized)
 		return
 	}
 
-	handlers.RespondWithData(w, r, authToken)
+	res := JwtVerifyResponse{
+		Jwt: authToken,
+	}
+	handlers.RespondWithData(w, r, res)
+}
+
+func (h *Handlers) RenewRefreshToken(w http.ResponseWriter, r *http.Request) {
+	var req JwtVerifyRequest
+	if err := handlers.FromRequest(r, &req); err != nil {
+		handlers.RespondWithError(w, r, err, http.StatusBadRequest)
+		return
+	}
+
+	refreshToken, isValid := h.Service.RenewRefreshToken(req.Jwt)
+	if !isValid {
+		handlers.RespondWithError(w, r, ErrInvalidJwt, http.StatusUnauthorized)
+		return
+	}
+
+	res := JwtVerifyResponse{
+		Jwt: refreshToken,
+	}
+	handlers.RespondWithData(w, r, res)
 }
 
 func (h *Handlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -117,8 +155,8 @@ func (h *Handlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	handlers.RespondWithData(w, r, "update successful")
 }
 
-func (h *Handlers) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bearerToken := r.Header.Get("Authorization")
 
 		// Check if token exists
@@ -146,5 +184,5 @@ func (h *Handlers) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		// If token is valid, forward to the actual handler
 		next.ServeHTTP(w, r.WithContext(ctx))
-	}
+	})
 }

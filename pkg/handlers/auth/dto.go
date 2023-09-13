@@ -20,6 +20,10 @@ type UserAuthRes struct {
 	TokenPair TokenPairDTO `json:"tokenPair"`
 }
 
+type JwtVerifyResponse struct {
+	Jwt string `json:"jwt"`
+}
+
 // dto --------------------------------------------------------------------------------------------
 type TokenPairDTO struct {
 	RefreshToken string `json:"refreshToken"`

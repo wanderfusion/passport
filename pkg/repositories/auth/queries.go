@@ -5,15 +5,16 @@ import (
 	"errors"
 
 	"github.com/akxcix/passport/pkg/repositories"
+	"github.com/google/uuid"
 )
 
-func (db *Database) RegisterUser(email, hashedPassword string) error {
+func (db *Database) RegisterUser(email, hashedPassword, username, profilePicture string) error {
 	query := `
-		INSERT INTO public.users (email, hashed_password) VALUES ($1, $2)
+		INSERT INTO public.users (email, hashed_password, username, profile_picture) VALUES ($1, $2, $3, $4)
 	`
 
 	tx := db.db.MustBegin()
-	_, err := tx.Exec(query, email, hashedPassword)
+	_, err := tx.Exec(query, email, hashedPassword, username, profilePicture)
 	if err != nil {
 		isViolated, err := repositories.CheckPGUniqueConstraintError(err)
 		if isViolated {
@@ -32,6 +33,26 @@ func (db *Database) FetchUserDataByEmail(email string) (*User, error) {
 
 	// QueryRow still works, but now we're scanning into multiple variables
 	err := db.db.Get(&user, query, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows returned means there's no user with that email
+			return nil, errors.New("User not found")
+		}
+		// Some other cosmic-level error happened, man
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (db *Database) FetchUserDataByID(id uuid.UUID) (*User, error) {
+	user := User{}
+	query := `
+		SELECT * FROM public.users WHERE id = $1
+	`
+
+	// QueryRow still works, but now we're scanning into multiple variables
+	err := db.db.Get(&user, query, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// No rows returned means there's no user with that email
