@@ -63,6 +63,35 @@ func (h *Handlers) GetUsersUsingUUIDs(w http.ResponseWriter, r *http.Request) {
 	handlers.RespondWithData(w, r, userDTOs)
 }
 
+func (h *Handlers) GetUsersUsingUsernames(w http.ResponseWriter, r *http.Request) {
+	usernamesParam := chi.URLParam(r, "usernames")
+	usernames := strings.Split(usernamesParam, ",")
+	if len(usernames) == 0 {
+		handlers.RespondWithError(w, r, errors.New("userIds is empty"), http.StatusBadRequest)
+		return
+	}
+	if len(usernames) > 20 {
+		handlers.RespondWithError(w, r, errors.New("too many user ids"), http.StatusBadRequest)
+		return
+	}
+
+	users, err := h.Service.GetUsersUsingUsernames(usernames)
+	if err != nil {
+		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	userDTOs := make([]UserDTO, len(users))
+	for i, user := range users {
+		userDTOs[i] = UserDTO{
+			ID:         user.ID,
+			Username:   user.Username,
+			ProfilePic: user.ProfilePic,
+		}
+	}
+	handlers.RespondWithData(w, r, userDTOs)
+}
+
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	var req UserAuthReq
 	if err := handlers.FromRequest(r, &req); err != nil {

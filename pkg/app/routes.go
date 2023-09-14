@@ -65,7 +65,8 @@ func rateLimiteMiddleware() func(http.Handler) http.Handler {
 
 func applyAuthRoutes(r *chi.Mux, authH *authHandlers.Handlers) {
 	r.Route("/users", func(r chi.Router) {
-		r.Get("/{userIDs}", authH.GetUsersUsingUUIDs)
+		r.Get("/uuid/{userIDs}", authH.GetUsersUsingUUIDs)
+		r.Get("/username/{usernames}", authH.GetUsersUsingUsernames)
 		r.Post("/register", authH.RegisterUser)
 		r.Post("/login", authH.LoginUser)
 		r.With(authH.AuthMiddleware).Put("/me", authH.UpdateUser)

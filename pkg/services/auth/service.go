@@ -43,6 +43,11 @@ func (s *Service) GetUsersUsingUUIDs(userIDs []uuid.UUID) ([]auth.User, error) {
 	return users, err
 }
 
+func (s *Service) GetUsersUsingUsernames(usernames []string) ([]auth.User, error) {
+	users, err := s.AuthRepo.FetchUsersUsingUsernames(usernames)
+	return users, err
+}
+
 func (s *Service) RegisterUser(email, password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {

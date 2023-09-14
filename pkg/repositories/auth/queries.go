@@ -66,6 +66,26 @@ func (db *Database) FetchUserDataByID(id uuid.UUID) (*User, error) {
 	return &user, nil
 }
 
+func (db *Database) FetchUserDataByUsername(username string) (*User, error) {
+	user := User{}
+	query := `
+		SELECT (username, profile_picture, email) FROM public.users WHERE username = $1
+	`
+
+	// QueryRow still works, but now we're scanning into multiple variables
+	err := db.db.Get(&user, query, username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows returned means there's no user with that email
+			return nil, errors.New("User not found")
+		}
+		// Some other cosmic-level error happened, man
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 func (db *Database) UpdateUserProfile(user User) error {
 	query := `
         UPDATE public.users
@@ -91,6 +111,27 @@ func (db *Database) FetchUsersUsingUUIDs(ids []uuid.UUID) ([]User, error) {
     `
 
 	q, vs, err := sqlx.In(query, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	q = db.db.Rebind(q)
+
+	err = db.db.Select(&users, q, vs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (db *Database) FetchUsersUsingUsernames(usernames []string) ([]User, error) {
+	users := []User{}
+	query := `
+        SELECT * FROM public.users WHERE username IN (?)
+    `
+
+	q, vs, err := sqlx.In(query, usernames)
 	if err != nil {
 		return nil, err
 	}
