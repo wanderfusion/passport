@@ -6,6 +6,7 @@ import (
 
 	"github.com/akxcix/passport/pkg/repositories"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 )
 
 func (db *Database) RegisterUser(email, hashedPassword, username, profilePicture string) error {
@@ -81,4 +82,25 @@ func (db *Database) UpdateUserProfile(user User) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func (db *Database) FetchUsersUsingUUIDs(ids []uuid.UUID) ([]User, error) {
+	users := []User{}
+	query := `
+        SELECT * FROM public.users WHERE id IN (?)
+    `
+
+	q, vs, err := sqlx.In(query, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	q = db.db.Rebind(q)
+
+	err = db.db.Select(&users, q, vs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

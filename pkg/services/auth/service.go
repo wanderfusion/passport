@@ -38,6 +38,11 @@ func validateConfig(dbConf *config.DatabaseConfig, jwtConf *config.Jwt) {
 	}
 }
 
+func (s *Service) GetUsersUsingUUIDs(userIDs []uuid.UUID) ([]auth.User, error) {
+	users, err := s.AuthRepo.FetchUsersUsingUUIDs(userIDs)
+	return users, err
+}
+
 func (s *Service) RegisterUser(email, password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {

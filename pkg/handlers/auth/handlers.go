@@ -8,6 +8,7 @@ import (
 
 	"github.com/akxcix/passport/pkg/handlers"
 	"github.com/akxcix/passport/pkg/services/auth"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +22,45 @@ func New(s *auth.Service) *Handlers {
 	}
 
 	return &h
+}
+
+func (h *Handlers) GetUsersUsingUUIDs(w http.ResponseWriter, r *http.Request) {
+	userIDsString := chi.URLParam(r, "userIDs")
+	userIDs := strings.Split(userIDsString, ",")
+	if len(userIDs) == 0 {
+		handlers.RespondWithError(w, r, errors.New("userIds is empty"), http.StatusBadRequest)
+		return
+	}
+	if len(userIDs) > 20 {
+		handlers.RespondWithError(w, r, errors.New("too many user ids"), http.StatusBadRequest)
+		return
+	}
+
+	userIdUUIDs := make([]uuid.UUID, len(userIDs))
+	for i, id := range userIDs {
+		uuid, err := uuid.Parse(id)
+		if err != nil {
+			handlers.RespondWithError(w, r, err, http.StatusBadRequest)
+			return
+		}
+		userIdUUIDs[i] = uuid
+	}
+
+	users, err := h.Service.GetUsersUsingUUIDs(userIdUUIDs)
+	if err != nil {
+		handlers.RespondWithError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+
+	userDTOs := make([]UserDTO, len(users))
+	for i, user := range users {
+		userDTOs[i] = UserDTO{
+			ID:         user.ID,
+			Username:   user.Username,
+			ProfilePic: user.ProfilePic,
+		}
+	}
+	handlers.RespondWithData(w, r, userDTOs)
 }
 
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
