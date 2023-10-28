@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/akxcix/passport/pkg/repositories"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/wanderfusion/passport/pkg/repositories"
 )
 
 func (db *Database) RegisterUser(email, hashedPassword, username, profilePicture string) error {

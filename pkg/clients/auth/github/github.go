@@ -3,7 +3,7 @@ package github
 import (
 	"net/http"
 
-	"github.com/akxcix/passport/pkg/commons/httpclient"
+	"github.com/wanderfusion/passport/pkg/commons/httpclient"
 )
 
 type GithubOauthClient struct {

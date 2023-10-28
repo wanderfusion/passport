@@ -5,10 +5,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/akxcix/passport/pkg/commons/stringutils"
-	"github.com/akxcix/passport/pkg/config"
-	"github.com/akxcix/passport/pkg/jwt"
-	"github.com/akxcix/passport/pkg/repositories/auth"
+	"github.com/wanderfusion/passport/pkg/commons/stringutils"
+	"github.com/wanderfusion/passport/pkg/config"
+	"github.com/wanderfusion/passport/pkg/jwt"
+	"github.com/wanderfusion/passport/pkg/repositories/auth"
 )
 
 type Service struct {

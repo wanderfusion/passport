@@ -1,4 +1,4 @@
-module github.com/akxcix/passport
+module github.com/wanderfusion/passport
 
 go 1.19
 

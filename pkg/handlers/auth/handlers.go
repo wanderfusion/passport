@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/akxcix/passport/pkg/handlers"
-	"github.com/akxcix/passport/pkg/services/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/wanderfusion/passport/pkg/handlers"
+	"github.com/wanderfusion/passport/pkg/services/auth"
 )
 
 type Handlers struct {

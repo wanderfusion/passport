@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"github.com/akxcix/passport/pkg/config"
-	"github.com/akxcix/passport/pkg/repositories"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
+	"github.com/wanderfusion/passport/pkg/config"
+	"github.com/wanderfusion/passport/pkg/repositories"
 
 	_ "github.com/lib/pq"
 )

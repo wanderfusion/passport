@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/akxcix/passport/pkg/app"
+	"github.com/wanderfusion/passport/pkg/app"
 )
 
 func main() {

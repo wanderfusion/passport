@@ -3,13 +3,13 @@ package app
 import (
 	"net/http"
 
-	"github.com/akxcix/passport/pkg/handlers"
-	authHandlers "github.com/akxcix/passport/pkg/handlers/auth"
-	"github.com/akxcix/passport/pkg/services/auth"
 	"github.com/rs/zerolog/log"
 	limiter "github.com/ulule/limiter/v3"
 	mhttp "github.com/ulule/limiter/v3/drivers/middleware/stdlib"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
+	"github.com/wanderfusion/passport/pkg/handlers"
+	authHandlers "github.com/wanderfusion/passport/pkg/handlers/auth"
+	"github.com/wanderfusion/passport/pkg/services/auth"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"

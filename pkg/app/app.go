@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/akxcix/passport/pkg/config"
-	"github.com/akxcix/passport/pkg/services/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/wanderfusion/passport/pkg/config"
+	"github.com/wanderfusion/passport/pkg/services/auth"
 )
 
 type application struct {
