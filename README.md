@@ -1,6 +1,5 @@
 # passport
-ID Management
-
+[![Docker](https://github.com/wanderfusion/passport/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/wanderfusion/passport/actions/workflows/docker-publish.yml)
 ## Running
 ```
 docker build -t passport:latest .
