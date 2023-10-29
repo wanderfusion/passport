@@ -22,3 +22,4 @@ go.work
 
 # Configs
 config.yml
+sql/tern.conf
