@@ -1,5 +1,4 @@
-# passport
-[![Docker](https://github.com/wanderfusion/passport/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/wanderfusion/passport/actions/workflows/docker-publish.yml)
+# passport · [![Docker](https://github.com/wanderfusion/passport/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/wanderfusion/passport/actions/workflows/docker-publish.yml)
 ## Running
 ### Local Build
 ```
